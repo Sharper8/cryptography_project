@@ -153,6 +153,7 @@ def cipher(data, public_key):
             else:
                 temp.append(0)
         # print(temp)
+    
         X2.append(temp)
 
     matrix2 = np.zeros((len(X2), len(X2))).astype(int)
@@ -178,36 +179,50 @@ def cipher(data, public_key):
     
 def decipher(ciph_data, public_key):
     X1 = ciph_data[0]
+    show_matrice_clean(X1, "RX1")
     ciph_data_mess = ciph_data[1].astype(int)
     public_key_inv = np.linalg.inv(public_key).astype(int)
     print("public_key_inv : ")
     for elt in public_key_inv:
         print(elt)
-        
-    X1_inv = np.linalg.inv(X1)
-    print("X1 received : ")
-    for elt in X1:
-        print(elt)
-    print("message receiued : ")
-    for elt in ciph_data_mess:
-        print(elt)
-    X3 = np.dot(public_key_inv, ciph_data_mess)
-    print("X3 : ")
-    for elt in X3:
-        print(elt)
-    
-    X2 = np.dot(X1_inv,X3).astype(int)
-    print("X2 : ")
-    for elt in X2:
-        print(elt)
-        
-    encoding_table = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k","l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v","w", "x", "y", "z"]
-    for i in range(len(X2)):
-        if i==0 :
-            print("elt : ", X2[i][i+1], " => ", encoding_table[1+int(X2[i][i+1])])
-        else :
-            print("elt : ", X2[i][i-1], " => ", encoding_table[1+int(X2[i][i-1])])
 
+    X1_inv = np.linalg.inv(X1)
+    
+    X3 = np.dot(public_key_inv, ciph_data_mess)
+    show_matrice_clean(X3, "RX3")
+    X2 = np.dot(X1_inv,X3).astype(int)
+    show_matrice_clean(X2, "RX2")
+    
+    # X3_test = np.dot(ciph_data_mess, public_key_inv)
+    # show_matrice_clean(X3_test, "X3_test")
+    # X2_test = np.dot(X3_test, X1_inv).astype(int)
+    # show_matrice_clean(X2_test, "X2_test")
+    print("\nDeciphering")
+    encoding_table = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k","l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v","w", "x", "y", "z"]
+    head = 0
+    # for i in range(len(X2)):
+    #     if i==(len(X2)-1) :
+    #         head+=int(X2[i][i-1])
+    #         print("elt : ", head, " => ", encoding_table[head])
+    #     else :
+    #         head+=int(X2[1+i][i])
+    #         print("elt : ", head, " => ", encoding_table[head])
+    #     print("head : ",head)
+    i=0;
+    head = 0
+    for i in range(len(X2)):
+        print(" i : ",i)
+        if i==len(X2)-1:
+            break
+            head+=int(X2[i][i-1])
+            print("last elt : ", head, " => ", encoding_table[head])
+        elif i%2==0:
+            head+=int(X2[i+1][i])
+            print("elt : ", head, " => ", encoding_table[head])
+        else :
+            head+=int(X2[i][i+1])
+            print("elt : ", head, " => ", encoding_table[head])
+        
 
 # main code
 data  = "code"

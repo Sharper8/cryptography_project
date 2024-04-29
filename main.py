@@ -7,16 +7,22 @@ import numpy as np
 
 # functions
 
+def show_matrice_clean(matrice, name):
+    print("\n --- ", name, " ---")
+    for elt in matrice:
+        print("[", end="")
+        for elt2 in elt:
+            print(elt2, end=" ")
+        print("]")
+    
 def see_links(links):
     for key in links:
         print(key, " : ", links[key],"\n")
         
-
 def get_weight(node1, node2):
     # TODO  useless/better in ascii ? + can it be modulated with symmetrical key ?
     encoding_table = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k","l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v","w", "x", "y", "z"]
     return (encoding_table.index(node2) - encoding_table.index(node1))
-
 
 def connect_nodes(nodes, links):
     # Loop over the nodes
@@ -58,7 +64,21 @@ def connect_nodes(nodes, links):
 #         print("And reverse For the element: ", shortest_path[i+1], "we add ", shortest_path[i], "like that : ", shortest_path[i],":",links[shortest_path[i]][shortest_path[i+1]])
 #         shortest_tree[shortest_path[i+1]] = {shortest_path[i]:links[shortest_path[i]][shortest_path[i+1]]}
 
+def multiply_matrices(matrix1, matrix2):
+    # Vérifier si les dimensions des matrices sont valides pour la multiplication
+    if len(matrix1[0]) != len(matrix2):
+        raise ValueError("! need to be same length")
 
+    # Initialiser une nouvelle matrice résultante avec des zéros
+    result = [[0 for _ in range(len(matrix2[0]))] for _ in range(len(matrix1))]
+
+    # Effectuer la multiplication
+    for i in range(len(matrix1)):
+        for j in range(len(matrix2[0])):
+            for k in range(len(matrix2)):
+                result[i][j] += matrix1[i][k] * matrix2[k][j]
+                print("result[",i,",",j,"] += matrix1[",i,",",k,"] * matrix2[",k,",",j,"] = ",matrix1[i][k], " * ", matrix2[k][j], " = ", result[i][j])
+    return result
 
     
 def cipher(data, public_key):
@@ -104,7 +124,7 @@ def cipher(data, public_key):
     shortest_tree = {}
     for i in range(len(shortest_path)):
         if i == len(shortest_path)-1:
-            shortest_tree[shortest_path[i]] = {}
+            # shortest_tree[shortest_path[i]] = {}
             break
         # Vérifie si la clé shortest_path[i] est déjà dans shortest_tree, sinon l'ajoute
         if shortest_path[i] not in shortest_tree:
@@ -112,14 +132,14 @@ def cipher(data, public_key):
         # Vérifie si la clé shortest_path[i+1] est déjà dans shortest_tree, sinon l'ajoute
         if shortest_path[i+1] not in shortest_tree:
             shortest_tree[shortest_path[i+1]] = {}
-        # print("element : ", shortest_path[i], "-> add ", shortest_path[i+1], ": { ", shortest_path[i+1],":",links[shortest_path[i]][shortest_path[i+1]], "}")
+        print("element : ", shortest_path[i], "-> add ", shortest_path[i+1], ": { ", shortest_path[i+1],":",links[shortest_path[i]][shortest_path[i+1]], "}")
         shortest_tree[shortest_path[i]][shortest_path[i+1]] = links[shortest_path[i]][shortest_path[i+1]]
-        # print("Reverse : ", shortest_path[i+1], "-> add ", shortest_path[i], "like that : ", shortest_path[i],":",links[shortest_path[i]][shortest_path[i+1]])
+        print("Reverse : ", shortest_path[i+1], "-> add ", shortest_path[i], "like that : ", shortest_path[i],":",links[shortest_path[i]][shortest_path[i+1]])
         shortest_tree[shortest_path[i+1]][shortest_path[i]] = links[shortest_path[i]][shortest_path[i+1]]
 
-    # see_links(shortest_tree)
+    see_links(shortest_tree)
     
-    matrix2 = []
+    X2 = []
     # print("Shortest tree", shortest_tree)
     keys = list(shortest_tree.keys())
     for key in keys:
@@ -133,42 +153,27 @@ def cipher(data, public_key):
             else:
                 temp.append(0)
         # print(temp)
-        matrix2.append(temp)
-    # see_links(shortest_tree)
-    matrix2 = []
-    # print("Shortest tree", shortest_tree)
-    keys = list(shortest_tree.keys())
-    for key in keys:
-        # print("For the key: ",key)
-        temp = []
-        for i in range(len(keys)):
-            # print('is ',keys[i],' in ',links[key])
-            if keys[i] in shortest_tree[key]:
-                # print('yes, then add the value:',links[key][keys[i]])
-                temp.append(shortest_tree[key][keys[i]])
-            else:
-                temp.append(0)
-        # print(temp)
-        matrix2.append(temp)
-    for elt in matrix2:
-        print(elt)
-    # print("matrix2: ",matrix2)
-    for i in range(len(matrix2)):
-        for j in range(len(matrix2[i])):
+        X2.append(temp)
+
+    matrix2 = np.zeros((len(X2), len(X2))).astype(int)
+    for i in range(len(X2)):
+        for j in range(len(X2[i])):
             if i==j:
                 matrix2[i][j] = i
-    
-    X3 = np.dot(X1, matrix2)
-    print("---")
-    
-    
-    ciphered_data = np.dot(public_key, X3)
-    for elt in ciphered_data:
-        print(elt)
-    print("X1 : ")
-    for elt in X1:
-        print(elt)
-    return (X1, ciphered_data)
+            else:
+                matrix2[i][j] = X2[i][j]
+                
+    show_matrice_clean(X1, "X1")
+    show_matrice_clean(X2, "X2")
+    show_matrice_clean(matrix2, "matrix2")
+    # show_matrice_clean(public_key, "public_key")
+    #  = np.dot(X1,X2)
+    # show_matrice_clean(X3, "X3")
+    X3 = np.dot(X1,matrix2)
+    show_matrice_clean(X3, "X3test")
+    Ct= np.dot(public_key, X3)
+    show_matrice_clean(Ct, "Ct")
+    return (X1, Ct)
     
     
 def decipher(ciph_data, public_key):
@@ -186,8 +191,12 @@ def decipher(ciph_data, public_key):
     print("message receiued : ")
     for elt in ciph_data_mess:
         print(elt)
-    X3 = np.dot(ciph_data_mess, public_key_inv).astype(int)
-    X2 = np.dot(X3, X1_inv).astype(int)
+    X3 = np.dot(public_key_inv, ciph_data_mess)
+    print("X3 : ")
+    for elt in X3:
+        print(elt)
+    
+    X2 = np.dot(X1_inv,X3).astype(int)
     print("X2 : ")
     for elt in X2:
         print(elt)
@@ -209,8 +218,8 @@ for i in range(n):
     for j in range(i , n): 
         public_key[i, j] = 1
 
-for elt in public_key:
-    print(elt)
+# for elt in public_key:
+#     print(elt)
 
 print("---")
 

@@ -63,25 +63,9 @@ def connect_nodes(nodes, links):
 #         shortest_tree[shortest_path[i]] = {shortest_path[i+1]:links[shortest_path[i]][shortest_path[i+1]]}
 #         print("And reverse For the element: ", shortest_path[i+1], "we add ", shortest_path[i], "like that : ", shortest_path[i],":",links[shortest_path[i]][shortest_path[i+1]])
 #         shortest_tree[shortest_path[i+1]] = {shortest_path[i]:links[shortest_path[i]][shortest_path[i+1]]}
-
-def multiply_matrices(matrix1, matrix2):
-    # Vérifier si les dimensions des matrices sont valides pour la multiplication
-    if len(matrix1[0]) != len(matrix2):
-        raise ValueError("! need to be same length")
-
-    # Initialiser une nouvelle matrice résultante avec des zéros
-    result = [[0 for _ in range(len(matrix2[0]))] for _ in range(len(matrix1))]
-
-    # Effectuer la multiplication
-    for i in range(len(matrix1)):
-        for j in range(len(matrix2[0])):
-            for k in range(len(matrix2)):
-                result[i][j] += matrix1[i][k] * matrix2[k][j]
-                print("result[",i,",",j,"] += matrix1[",i,",",k,"] * matrix2[",k,",",j,"] = ",matrix1[i][k], " * ", matrix2[k][j], " = ", result[i][j])
-    return result
-
     
 def cipher(data, public_key):
+    print("ciphering data : ", data)
     nodes = []
     # example of links = {a: {b: 1, c: 2}, b: {a: 1, c: 3}, c: {a: 2, b: 3}}
     links = {}
@@ -115,7 +99,7 @@ def cipher(data, public_key):
                 temp.append(0)
         # print(temp)
         X1.append(temp)
-    
+    # TODO algo shortest path and spanning tree
     # construct the minimum spanning tree
     # span_tree = get_minimum_spanning_tree(matrix) TODO do i have to calculate or will it alaways be the same as the word ?
     # split the data in a table with one character per element
@@ -132,12 +116,12 @@ def cipher(data, public_key):
         # Vérifie si la clé shortest_path[i+1] est déjà dans shortest_tree, sinon l'ajoute
         if shortest_path[i+1] not in shortest_tree:
             shortest_tree[shortest_path[i+1]] = {}
-        print("element : ", shortest_path[i], "-> add ", shortest_path[i+1], ": { ", shortest_path[i+1],":",links[shortest_path[i]][shortest_path[i+1]], "}")
+        # print("element : ", shortest_path[i], "-> add ", shortest_path[i+1], ": { ", shortest_path[i+1],":",links[shortest_path[i]][shortest_path[i+1]], "}")
         shortest_tree[shortest_path[i]][shortest_path[i+1]] = links[shortest_path[i]][shortest_path[i+1]]
-        print("Reverse : ", shortest_path[i+1], "-> add ", shortest_path[i], "like that : ", shortest_path[i],":",links[shortest_path[i]][shortest_path[i+1]])
+        # print("Reverse : ", shortest_path[i+1], "-> add ", shortest_path[i], "like that : ", shortest_path[i],":",links[shortest_path[i]][shortest_path[i+1]])
         shortest_tree[shortest_path[i+1]][shortest_path[i]] = links[shortest_path[i]][shortest_path[i+1]]
 
-    see_links(shortest_tree)
+    # see_links(shortest_tree)
     
     X2 = []
     # print("Shortest tree", shortest_tree)
@@ -214,7 +198,8 @@ def decipher(ciph_data, public_key):
             # print("elt : ", head, " => ", encoding_table[head])
         # print("head : ",head)
         
-    print("word : ", word)
+    # print("word : ", word)
+    return(word)
     # i=0;
     # head = 0
     # for i in range(len(X2)):
@@ -232,25 +217,17 @@ def decipher(ciph_data, public_key):
         
 
 # main code
-data  = "coder"
+data  = "clefs"
 # public key
 n = len(data)+1
 public_key = np.zeros((n, n)).astype(int)  
 for i in range(n):
     for j in range(i , n): 
         public_key[i, j] = 1
-
-# for elt in public_key:
-#     print(elt)
-
+        
 print("---")
 
 ciphered_data = cipher(data, public_key)
-
-# print(ciphered_data)
+print("sending : ",ciphered_data)
 deciphered_data = decipher(ciphered_data, public_key)
-# print(deciphered_data)
-
-
-#tests
-
+print("deciphered :",deciphered_data)

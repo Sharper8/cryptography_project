@@ -13,3 +13,8 @@ attaquant ne peut pas déchiffrer le message facilement. C’est-à-dire, bien q
 X2 ​et X1 soient très proches, pourquoi avons-nous besoin de X2 pour déchiffrer 
 et pourquoi X1 ne suffit pas.
 
+
+TODO :
+
+- changer la tete de l'arbre par d'autre charactère ? 
+- faire l'algo pour le shortest path au lieu de prendre tout le temps le même ordre que le mot

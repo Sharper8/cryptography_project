@@ -164,68 +164,75 @@ def cipher(data, public_key):
             else:
                 matrix2[i][j] = X2[i][j]
                 
-    show_matrice_clean(X1, "X1")
-    show_matrice_clean(X2, "X2")
-    show_matrice_clean(matrix2, "matrix2")
+    # show_matrice_clean(X1, "X1")
+    # show_matrice_clean(X2, "X2")
+    # show_matrice_clean(matrix2, "matrix2")
     # show_matrice_clean(public_key, "public_key")
     #  = np.dot(X1,X2)
     # show_matrice_clean(X3, "X3")
     X3 = np.dot(X1,matrix2)
-    show_matrice_clean(X3, "X3test")
+    # show_matrice_clean(X3, "X3test")
     Ct= np.dot(public_key, X3)
-    show_matrice_clean(Ct, "Ct")
+    # show_matrice_clean(Ct, "Ct")
     return (X1, Ct)
     
     
 def decipher(ciph_data, public_key):
     X1 = ciph_data[0]
-    show_matrice_clean(X1, "RX1")
+    # show_matrice_clean(X1, "RX1")
     ciph_data_mess = ciph_data[1].astype(int)
     public_key_inv = np.linalg.inv(public_key).astype(int)
-    print("public_key_inv : ")
-    for elt in public_key_inv:
-        print(elt)
+    # show_matrice_clean(public_key_inv, "public_key_inv")
 
     X1_inv = np.linalg.inv(X1)
-    
+    # show_matrice_clean(X1_inv, "RX1_inv")
+    # X1_inv_rounded = np.round(X1_inv)
+    # show_matrice_clean(X1_inv_rounded, "RX1_inv_rounded")
     X3 = np.dot(public_key_inv, ciph_data_mess)
-    show_matrice_clean(X3, "RX3")
-    X2 = np.dot(X1_inv,X3).astype(int)
-    show_matrice_clean(X2, "RX2")
+    # show_matrice_clean(X3, "RX3")
+    X2_V1 = np.dot(X1_inv,X3)
+    # show_matrice_clean(X2_V1, "RX2")
+    X2_rounded = np.round(X2_V1,0)
+    X2 = X2_rounded.astype(int)
+    # show_matrice_clean(X2, "RX2_final")
     
-    # X3_test = np.dot(ciph_data_mess, public_key_inv)
-    # show_matrice_clean(X3_test, "X3_test")
-    # X2_test = np.dot(X3_test, X1_inv).astype(int)
-    # show_matrice_clean(X2_test, "X2_test")
     print("\nDeciphering")
+    #TODO ameliorer pour table ascii
     encoding_table = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k","l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v","w", "x", "y", "z"]
     head = 0
+    word = ""
+    for i in range(len(X2)):
+        if i==len(X2)-1:
+                break
+        elif i==(len(X2)-1) :
+            head+=int(X2[i][i-1])
+            word+=encoding_table[head]
+            # print("elt : ", head, " => ", encoding_table[head])
+        else :
+            head+=int(X2[1+i][i])
+            word+=encoding_table[head]
+            # print("elt : ", head, " => ", encoding_table[head])
+        # print("head : ",head)
+        
+    print("word : ", word)
+    # i=0;
+    # head = 0
     # for i in range(len(X2)):
-    #     if i==(len(X2)-1) :
+    #     print(" i : ",i)
+    #     if i==len(X2)-1:
+    #         break
     #         head+=int(X2[i][i-1])
+    #         print("last elt : ", head, " => ", encoding_table[head])
+    #     elif i%2==0:
+    #         head+=int(X2[i+1][i])
     #         print("elt : ", head, " => ", encoding_table[head])
     #     else :
-    #         head+=int(X2[1+i][i])
+    #         head+=int(X2[i][i+1])
     #         print("elt : ", head, " => ", encoding_table[head])
-    #     print("head : ",head)
-    i=0;
-    head = 0
-    for i in range(len(X2)):
-        print(" i : ",i)
-        if i==len(X2)-1:
-            break
-            head+=int(X2[i][i-1])
-            print("last elt : ", head, " => ", encoding_table[head])
-        elif i%2==0:
-            head+=int(X2[i+1][i])
-            print("elt : ", head, " => ", encoding_table[head])
-        else :
-            head+=int(X2[i][i+1])
-            print("elt : ", head, " => ", encoding_table[head])
         
 
 # main code
-data  = "code"
+data  = "coder"
 # public key
 n = len(data)+1
 public_key = np.zeros((n, n)).astype(int)  

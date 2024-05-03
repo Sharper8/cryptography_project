@@ -1,11 +1,13 @@
-# In this project, we will implement an encryption and 
-# deciphering using graph theory, and more specifically the concept of 
-# of a covering tree.
-# This algorithm is a symmetric key algorithm. It is based on the idea of finding 
-# a minimum weight covering tree (using Kruskal or Prim)
-import numpy as np
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+# imports
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
+import numpy as np
+from node_object import *
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # functions
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 def show_matrice_clean(matrice, name):
     print("\n --- ", name, " ---")
@@ -19,127 +21,89 @@ def see_links(links):
     for key in links:
         print(key, " : ", links[key],"\n")
         
-def get_weight(node1, node2):
+def get_weight(node1, node2, encoding_table):
     # TODO  useless/better in ascii ? + can it be modulated with symmetrical key ?
-    encoding_table = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k","l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v","w", "x", "y", "z"]
     return (encoding_table.index(node2) - encoding_table.index(node1))
-
-def connect_nodes(nodes, links):
+   
+def connect_nodes(nodes, lenght_alpha):
     # Loop over the nodes
-    for i in range(len(nodes)):
-        # If the node is not in the links dictionary, add it with an empty dictionary as value
-        if nodes[i] not in links:
-            links[nodes[i]] = {}
-        # Add a link to only the next element 
-        links[nodes[i]][nodes[(i+1)%len(nodes)]] = get_weight(nodes[i], nodes[(i+1)%len(nodes)])
-        # Add a link to only the previous element
-        if nodes[(i+1)%len(nodes)] not in links:
-            links[nodes[(i+1)%len(nodes)]] = {}
-        links[nodes[(i+1)%len(nodes)]][nodes[i]] = links[nodes[i]][nodes[(i+1)%len(nodes)]]
-    
-    #add the remaining nodes with wieght > len(encoding_table)
-    iterator = 26
     for elt in nodes:
-        iterator += 1
-        for elt2 in nodes:
-            if elt2 not in links[elt] and elt != elt2:
-                links[elt][elt2] = iterator
-                links[elt2][elt] = links[elt][elt2]
-    
-    # print("links after covering tree: ",links)
-    
-# def get_minimum_spanning_tree(shortest_tree, shortest_path):
-#     # Loop over the nodes
-#     for i in range(len(shortest_path)):
-        
-#         if i == len(shortest_path)-1:
-#             shortest_tree[shortest_path[i]] = {}
-#             break
-#         if shortest_path[i] not in shortest_tree:
-#             shortest_tree[shortest_path[i]] = {}
-#         # construct the minimum spanning tree
-#         # print("shortest_path : ", shortest_path)
-#         print("For the element: ", shortest_path[i], "we add ", shortest_path[i+1], "like that : ", shortest_path[i+1],":",links[shortest_path[i]][shortest_path[i+1]])
-#         shortest_tree[shortest_path[i]] = {shortest_path[i+1]:links[shortest_path[i]][shortest_path[i+1]]}
-#         print("And reverse For the element: ", shortest_path[i+1], "we add ", shortest_path[i], "like that : ", shortest_path[i],":",links[shortest_path[i]][shortest_path[i+1]])
-#         shortest_tree[shortest_path[i+1]] = {shortest_path[i]:links[shortest_path[i]][shortest_path[i+1]]}
-    
+        #if elt2 not in node neighbor, add the lengh as the weight
+        lenght_alpha+=1
+        for elt2 in nodes :
+            if elt2 != elt:
+                if elt2 not in elt.neighbors:
+                    elt.add_neighbor(elt2, lenght_alpha)
+                    elt2.add_neighbor(elt, lenght_alpha)
+
+def minimum_spanning_tree(graph_matrix):
+    num_nodes = len(graph_matrix)
+    visited = [False] * num_nodes
+    tree_matrix = [[0] * num_nodes for _ in range(num_nodes)]
+    # begin with the first node
+    visited[0] = True
+    while not all(visited):
+        min_edge_weight = float('inf')
+        min_edge_start = None
+        min_edge_end = None
+        for i in range(num_nodes):
+            if visited[i]:
+                for j in range(num_nodes):
+                    if not visited[j] and graph_matrix[i][j] != 0:
+                        if graph_matrix[i][j] < min_edge_weight:
+                            min_edge_weight = graph_matrix[i][j]
+                            min_edge_start = i
+                            min_edge_end = j
+
+        # add vertice at result
+        tree_matrix[min_edge_start][min_edge_end] = min_edge_weight
+        tree_matrix[min_edge_end][min_edge_start] = min_edge_weight
+        visited[min_edge_end] = True
+
+    return tree_matrix
+
 def cipher(data, public_key):
     print("ciphering data : ", data)
+    encoding_table = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k","l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v","w", "x", "y", "z"]
     nodes = []
-    # example of links = {a: {b: 1, c: 2}, b: {a: 1, c: 3}, c: {a: 2, b: 3}}
-    links = {}
-    for elt in data:
-        nodes.append(elt)
-    # print("nodes : ",nodes)
-    # connect the nodes of the base data
-    connect_nodes(nodes, links)
-    # print("links : ",links)
-    
+    size = len(data)
+    for i in range (size):
+        new_node = Node(i, data[i])
+        # append neighbors 
+        nodes.append(new_node)
+    for i in range(len(nodes)):
+        # add previous neighbor
+        nodes[i].add_neighbor(nodes[(i-1)%size], get_weight(data[(i-1)%size], data[i],encoding_table))
+        nodes[i].add_neighbor(nodes[(i+1)%size], get_weight(data[i], data[(i+1)%size],encoding_table))
+    # for node in nodes:
+    #     print("node : ", node.id, " => ", node.char, " neighbors : ", node.__str__())   
+    connect_nodes(nodes, len(encoding_table))
     spec_chara = "a"
-    links[spec_chara] = {data[0]: get_weight(spec_chara, data[0])}
-    links[data[0]][spec_chara] = links["a"][data[0]]
-    # see_links(links)
-    # put the links into symmetric matrix
+    node_spec = Node(len(data)+1, spec_chara)
+    node_spec.add_neighbor(nodes[0], get_weight(spec_chara, data[0],encoding_table))
+    nodes[0].add_neighbor(node_spec, get_weight(spec_chara,data[0],encoding_table))
+    nodes.insert(0, node_spec)
     X1 = []
     # copy the dict keys into a list
-    keys = list(links.keys())
-    # print("keys: ",keys)
-    keys.remove(spec_chara)
-    keys.insert(0,spec_chara)
-    for key in keys:
-        # print("For the key: ",key)
+    for i in range (len(nodes)):
         temp = []
-        for i in range(len(keys)):
-            # print('is ',keys[i],' in ',links[key])
-            if keys[i] in links[key]:
-                # print('yes, then add the value:',links[key][keys[i]])
-                temp.append(links[key][keys[i]])
+        for j in range (len(nodes)):
+            if nodes[i] in nodes[j].neighbors.keys():
+                temp.append(nodes[i].neighbors[nodes[j]])
             else:
                 temp.append(0)
-        # print(temp)
         X1.append(temp)
-    # TODO algo shortest path and spanning tree
-    # construct the minimum spanning tree
-    # span_tree = get_minimum_spanning_tree(matrix) TODO do i have to calculate or will it alaways be the same as the word ?
-    # split the data in a table with one character per element
-    shortest_path = list(spec_chara+data)
-    # print("shortest_path : ", shortest_path)
-    shortest_tree = {}
-    for i in range(len(shortest_path)):
-        if i == len(shortest_path)-1:
-            # shortest_tree[shortest_path[i]] = {}
+    show_matrice_clean(X1, "X1")    
+    # X2 = minimum_spanning_tree(X1)
+    X2 = np.zeros((len(X1), len(X1))).astype(int)
+    for i in range(len(nodes)):
+        if i==len(nodes)-1:
             break
-        # Vérifie si la clé shortest_path[i] est déjà dans shortest_tree, sinon l'ajoute
-        if shortest_path[i] not in shortest_tree:
-            shortest_tree[shortest_path[i]] = {}
-        # Vérifie si la clé shortest_path[i+1] est déjà dans shortest_tree, sinon l'ajoute
-        if shortest_path[i+1] not in shortest_tree:
-            shortest_tree[shortest_path[i+1]] = {}
-        # print("element : ", shortest_path[i], "-> add ", shortest_path[i+1], ": { ", shortest_path[i+1],":",links[shortest_path[i]][shortest_path[i+1]], "}")
-        shortest_tree[shortest_path[i]][shortest_path[i+1]] = links[shortest_path[i]][shortest_path[i+1]]
-        # print("Reverse : ", shortest_path[i+1], "-> add ", shortest_path[i], "like that : ", shortest_path[i],":",links[shortest_path[i]][shortest_path[i+1]])
-        shortest_tree[shortest_path[i+1]][shortest_path[i]] = links[shortest_path[i]][shortest_path[i+1]]
-
-    # see_links(shortest_tree)
+        else :
+            X2[i][i+1] = nodes[i].neighbors[nodes[i+1]]
+            X2[i+1][i] = nodes[i].neighbors[nodes[i+1]]
+    show_matrice_clean(X2, "X2")
     
-    X2 = []
-    # print("Shortest tree", shortest_tree)
-    keys = list(shortest_tree.keys())
-    for key in keys:
-        # print("For the key: ",key)
-        temp = []
-        for i in range(len(keys)):
-            # print('is ',keys[i],' in ',links[key])
-            if keys[i] in shortest_tree[key]:
-                # print('yes, then add the value:',links[key][keys[i]])
-                temp.append(shortest_tree[key][keys[i]])
-            else:
-                temp.append(0)
-        # print(temp)
-    
-        X2.append(temp)
-
     matrix2 = np.zeros((len(X2), len(X2))).astype(int)
     for i in range(len(X2)):
         for j in range(len(X2[i])):
@@ -148,39 +112,22 @@ def cipher(data, public_key):
             else:
                 matrix2[i][j] = X2[i][j]
                 
-    # show_matrice_clean(X1, "X1")
-    # show_matrice_clean(X2, "X2")
-    # show_matrice_clean(matrix2, "matrix2")
-    # show_matrice_clean(public_key, "public_key")
-    #  = np.dot(X1,X2)
-    # show_matrice_clean(X3, "X3")
     X3 = np.dot(X1,matrix2)
-    # show_matrice_clean(X3, "X3test")
     Ct= np.dot(public_key, X3)
-    # show_matrice_clean(Ct, "Ct")
     return (X1, Ct)
     
     
 def decipher(ciph_data, public_key):
     X1 = ciph_data[0]
-    # show_matrice_clean(X1, "RX1")
     ciph_data_mess = ciph_data[1].astype(int)
     public_key_inv = np.linalg.inv(public_key).astype(int)
-    # show_matrice_clean(public_key_inv, "public_key_inv")
-
     X1_inv = np.linalg.inv(X1)
-    # show_matrice_clean(X1_inv, "RX1_inv")
-    # X1_inv_rounded = np.round(X1_inv)
-    # show_matrice_clean(X1_inv_rounded, "RX1_inv_rounded")
     X3 = np.dot(public_key_inv, ciph_data_mess)
-    # show_matrice_clean(X3, "RX3")
     X2_V1 = np.dot(X1_inv,X3)
     # show_matrice_clean(X2_V1, "RX2")
     X2_rounded = np.round(X2_V1,0)
     X2 = X2_rounded.astype(int)
-    # show_matrice_clean(X2, "RX2_final")
-    
-    print("\nDeciphering")
+    print("\nDeciphering`...")
     #TODO ameliorer pour table ascii
     encoding_table = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k","l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v","w", "x", "y", "z"]
     head = 0
@@ -191,33 +138,19 @@ def decipher(ciph_data, public_key):
         elif i==(len(X2)-1) :
             head+=int(X2[i][i-1])
             word+=encoding_table[head]
-            # print("elt : ", head, " => ", encoding_table[head])
         else :
             head+=int(X2[1+i][i])
             word+=encoding_table[head]
-            # print("elt : ", head, " => ", encoding_table[head])
-        # print("head : ",head)
-        
-    # print("word : ", word)
-    return(word)
-    # i=0;
-    # head = 0
-    # for i in range(len(X2)):
-    #     print(" i : ",i)
-    #     if i==len(X2)-1:
-    #         break
-    #         head+=int(X2[i][i-1])
-    #         print("last elt : ", head, " => ", encoding_table[head])
-    #     elif i%2==0:
-    #         head+=int(X2[i+1][i])
-    #         print("elt : ", head, " => ", encoding_table[head])
-    #     else :
-    #         head+=int(X2[i][i+1])
-    #         print("elt : ", head, " => ", encoding_table[head])
-        
 
+    return(word)
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 # main code
-data  = "clefs"
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+# TODO user input ?
+data  = "code"
 # public key
 n = len(data)+1
 public_key = np.zeros((n, n)).astype(int)  
@@ -228,6 +161,8 @@ for i in range(n):
 print("---")
 
 ciphered_data = cipher(data, public_key)
-print("sending : ",ciphered_data)
+print("\n sending : ",ciphered_data)
 deciphered_data = decipher(ciphered_data, public_key)
-print("deciphered :",deciphered_data)
+
+print("\nMot original : ",data)
+print("/versus, décodé : ",deciphered_data)

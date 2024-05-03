@@ -1,6 +1,10 @@
 This is the readme of the cryptography project
 
-
+# In this project, we will implement an encryption and 
+# deciphering using graph theory, and more specifically the concept of 
+# of a covering tree.
+# This algorithm is a symmetric key algorithm. It is based on the idea of finding 
+# a minimum weight covering tree (using Kruskal or Prim)
 
 questions : 
 

@@ -1,4 +1,3 @@
-
 #create a class nodes with the next nodes and the weight
 
 class Node:

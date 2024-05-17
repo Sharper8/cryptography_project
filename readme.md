@@ -21,4 +21,5 @@ et pourquoi X1 ne suffit pas.
 TODO :
 
 - changer la tete de l'arbre par d'autre charactère ? 
-- faire l'algo pour le shortest path au lieu de prendre tout le temps le même ordre que le mot
+- faire l'algo pour le shortest path au lieu de prendre tout le temps le même ordre que le mot46
+- mots avec deux fois la meme lettre qui se suit = singular matrix ?

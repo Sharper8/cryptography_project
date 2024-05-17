@@ -22,7 +22,6 @@ def see_links(links):
         print(key, " : ", links[key],"\n")
         
 def get_weight(char1, char2):
-    # TODO + can it be modulated with symmetrical key ?
     return (ord(char2) - ord(char1))
    
 def connect_nodes(nodes, lenght_alpha):
@@ -37,35 +36,43 @@ def connect_nodes(nodes, lenght_alpha):
                     elt2.add_neighbor(elt, lenght_alpha)
 
 def minimum_spanning_tree(graph_matrix):
+    #TODO caution if two times same letter, needs to be diff than 0
+    
     num_nodes = len(graph_matrix)
     visited = [False] * num_nodes
     tree_matrix = [[0] * num_nodes for _ in range(num_nodes)]
-    # begin with the first node
-    visited[0] = True
-    while not all(visited):
-        min_edge_weight = float('inf')
-        min_edge_start = None
-        min_edge_end = None
-        for i in range(num_nodes):
-            if visited[i]:
-                for j in range(num_nodes):
-                    if not visited[j] and graph_matrix[i][j] != 0:
-                        if graph_matrix[i][j] < min_edge_weight:
-                            min_edge_weight = graph_matrix[i][j]
-                            min_edge_start = i
-                            min_edge_end = j
+    edge_count = 0  # To keep track of the number of edges in the MST
 
-        # add vertice at result
-        tree_matrix[min_edge_start][min_edge_end] = min_edge_weight
-        tree_matrix[min_edge_end][min_edge_start] = min_edge_weight
-        visited[min_edge_end] = True
+    # Priority queue to store the edges (weight, start_node, end_node)
+    import heapq
+    min_heap = []
+
+    # Start with the first node
+    visited[0] = True
+    for j in range(num_nodes):
+        if graph_matrix[0][j] != 0:
+            heapq.heappush(min_heap, (graph_matrix[0][j], 0, j))
+
+    while min_heap and edge_count < num_nodes - 1:
+        min_edge_weight, min_edge_start, min_edge_end = heapq.heappop(min_heap)
+
+        if not visited[min_edge_end]:
+            # Add edge to the tree
+            tree_matrix[min_edge_start][min_edge_end] = min_edge_weight
+            tree_matrix[min_edge_end][min_edge_start] = min_edge_weight
+            visited[min_edge_end] = True
+            edge_count += 1
+
+            # Add all edges from the newly visited node to the heap
+            for j in range(num_nodes):
+                if not visited[j] and graph_matrix[min_edge_end][j] != 0:
+                    heapq.heappush(min_heap, (graph_matrix[min_edge_end][j], min_edge_end, j))
 
     return tree_matrix
 
-def cipher(data, public_key,spec_chara):
+def cipher(data, public_key,spec_chara ):
     print("ciphering data : ", data)
     len_ascii = 128
-    # encoding_table = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k","l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v","w", "x", "y", "z"]
     nodes = []
     size = len(data)
     for i in range (size):
@@ -94,7 +101,8 @@ def cipher(data, public_key,spec_chara):
                 temp.append(0)
         X1.append(temp)
     show_matrice_clean(X1, "X1")    
-    # X2 = minimum_spanning_tree(X1)
+    X2_test = minimum_spanning_tree(X1)
+    show_matrice_clean(X2_test, "X2_test")
     X2 = np.zeros((len(X1), len(X1))).astype(int)
     for i in range(len(nodes)):
         if i==len(nodes)-1:
@@ -113,14 +121,20 @@ def cipher(data, public_key,spec_chara):
                 matrix2[i][j] = X2[i][j]
                 
     X3 = np.dot(X1,matrix2)
+    show_matrice_clean(X3, "X3")    
+
     Ct= np.dot(public_key, X3)
+    show_matrice_clean(Ct, "CT")    
+
     return (X1, Ct)
     
     
 def decipher(ciph_data, public_key,spec_chara):
+    
     X1 = ciph_data[0]
     ciph_data_mess = ciph_data[1].astype(int)
     public_key_inv = np.linalg.inv(public_key).astype(int)
+    print("\n Try inverting X1\n ")
     X1_inv = np.linalg.inv(X1)
     X3 = np.dot(public_key_inv, ciph_data_mess)
     X2_V1 = np.dot(X1_inv,X3)
@@ -147,7 +161,8 @@ def decipher(ciph_data, public_key,spec_chara):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # TODO user input ? 
-data  = "coucou c'est moi !"
+data  = "Loot"
+#probeleme du double element possible de work around avec des espaces
 spec_chara = "a"
 
 # public key
@@ -159,7 +174,7 @@ for i in range(n):
         
 print("---")
 
-ciphered_data = cipher(data, public_key,spec_chara)
+ciphered_data = cipher(data, public_key,spec_chara,)
 print("\n sending : ",ciphered_data)
 deciphered_data = decipher(ciphered_data, public_key,spec_chara)
 

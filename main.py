@@ -11,11 +11,14 @@ from node_object import *
 
 def show_matrice_clean(matrice, name):
     print("\n --- ", name, " ---")
-    for elt in matrice:
+    # Calculer la largeur maximale de chaque colonne
+    max_widths = [max(len(str(elt)) for elt in col) for col in zip(*matrice)]
+    for row in matrice:
         print("[", end="")
-        for elt2 in elt:
-            print(elt2, end=" ")
+        for i, elt in enumerate(row):
+            print("{:>{width}}".format(elt, width=max_widths[i] + 1), end=" ")
         print("]")
+
     
 def see_links(links):
     for key in links:
@@ -25,6 +28,8 @@ def get_weight(char1, char2):
     return (ord(char2) - ord(char1))
    
 def connect_nodes(nodes, lenght_alpha):
+    #Create a connected graph
+    
     # Loop over the nodes
     for elt in nodes:
         #if elt2 not in node neighbor, add the lengh as the weight
@@ -35,8 +40,7 @@ def connect_nodes(nodes, lenght_alpha):
                     elt.add_neighbor(elt2, lenght_alpha)
                     elt2.add_neighbor(elt, lenght_alpha)
 
-def minimum_spanning_tree(graph_matrix):
-    #TODO caution if two times same letter, needs to be diff than 0
+def minimum_spanning_tree(graph_matrix,mask_matrix):
     
     num_nodes = len(graph_matrix)
     visited = [False] * num_nodes
@@ -50,7 +54,7 @@ def minimum_spanning_tree(graph_matrix):
     # Start with the first node
     visited[0] = True
     for j in range(num_nodes):
-        if graph_matrix[0][j] != 0:
+        if mask_matrix[0][j] != 0:
             heapq.heappush(min_heap, (graph_matrix[0][j], 0, j))
 
     while min_heap and edge_count < num_nodes - 1:
@@ -60,16 +64,22 @@ def minimum_spanning_tree(graph_matrix):
             # Add edge to the tree
             tree_matrix[min_edge_start][min_edge_end] = min_edge_weight
             tree_matrix[min_edge_end][min_edge_start] = min_edge_weight
+            print("added edge : ", min_edge_start, " to ", min_edge_end, " with weight : ", min_edge_weight)
             visited[min_edge_end] = True
             edge_count += 1
 
             # Add all edges from the newly visited node to the heap
             for j in range(num_nodes):
-                if not visited[j] and graph_matrix[min_edge_end][j] != 0:
+                if not visited[j] and mask_matrix[min_edge_end][j] != 0:
+                    heapq.heappush(min_heap, (graph_matrix[min_edge_end][j], min_edge_end, j))
+
+            # Add all edges from the newly visited node to the heap
+            for j in range(num_nodes):
+                if not visited[j] and mask_matrix[min_edge_end][j] != 0:
                     heapq.heappush(min_heap, (graph_matrix[min_edge_end][j], min_edge_end, j))
 
     return tree_matrix
-
+    
 def cipher(data, public_key,spec_chara ):
     print("ciphering data : ", data)
     len_ascii = 128
@@ -83,76 +93,107 @@ def cipher(data, public_key,spec_chara ):
         # add previous neighbor
         nodes[i].add_neighbor(nodes[(i-1)%size], get_weight(data[(i-1)%size], data[i]))
         nodes[i].add_neighbor(nodes[(i+1)%size], get_weight(data[i], data[(i+1)%size]))
-    # for node in nodes:
-    #     print("node : ", node.id, " => ", node.char, " neighbors : ", node.__str__())   
     connect_nodes(nodes, len_ascii)
     node_spec = Node(len(data)+1, spec_chara)
-    node_spec.add_neighbor(nodes[0], get_weight(spec_chara, data[0]))
-    nodes[0].add_neighbor(node_spec, get_weight(spec_chara,data[0]))
-    nodes.insert(0, node_spec)
+    
+    #add the spec node to the graph at random position
+    # random_index = 1
+    random_index = np.random.randint(0, len(nodes))    
+    new_nodes = [elt for elt in nodes]
+    new_nodes.insert(0, node_spec)
+    nodes.insert(random_index, node_spec)
+    next_node_index = (random_index+1)%len(nodes)
+    node_spec.add_neighbor(nodes[next_node_index], get_weight(spec_chara,nodes[next_node_index].char))
+    nodes[next_node_index].add_neighbor(node_spec, get_weight(spec_chara,nodes[next_node_index].char))
+    print("added node spec : ", node_spec.char, " at index : ", random_index, "and with a weight of", get_weight(spec_chara,nodes[next_node_index].char))
+    
     X1 = []
+    print('-----Nodes-----')
+    temp = []
+    for elt in nodes:
+        # print(elt.char)
+        temp.append(elt.char)
+    print(temp)
+    # mask will heklp determine the min span tree algo to see if 0 is an empty value or a weight
+    mask_matrix = []
     # copy the dict keys into a list
     for i in range (len(nodes)):
         temp = []
+        temp_mask = []
         for j in range (len(nodes)):
             if nodes[i] in nodes[j].neighbors.keys():
+                temp_mask.append(1)
                 temp.append(nodes[i].neighbors[nodes[j]])
             else:
+                temp_mask.append(0)
                 temp.append(0)
         X1.append(temp)
+        mask_matrix.append(temp_mask)
     show_matrice_clean(X1, "X1")    
-    X2_test = minimum_spanning_tree(X1)
-    show_matrice_clean(X2_test, "X2_test")
-    X2 = np.zeros((len(X1), len(X1))).astype(int)
-    for i in range(len(nodes)):
-        if i==len(nodes)-1:
-            break
-        else :
-            X2[i][i+1] = nodes[i].neighbors[nodes[i+1]]
-            X2[i+1][i] = nodes[i].neighbors[nodes[i+1]]
-    show_matrice_clean(X2, "X2")
+    #TODO look if matrix not singluar, eklse add a space
+
+    # X2test = fake_minimum_spanning_tree(X1, random_index)
+    # show_matrice_clean(X2test, "X2test")
     
+    X2 = minimum_spanning_tree(X1, mask_matrix)
+    show_matrice_clean(X2, "X2")
+
     matrix2 = np.zeros((len(X2), len(X2))).astype(int)
     for i in range(len(X2)):
         for j in range(len(X2[i])):
             if i==j:
-                matrix2[i][j] = i
+                matrix2[i][j] = new_nodes.index(nodes[i])
             else:
                 matrix2[i][j] = X2[i][j]
-                
+    show_matrice_clean(matrix2, "matrix2")
+    
     X3 = np.dot(X1,matrix2)
     show_matrice_clean(X3, "X3")    
-
     Ct= np.dot(public_key, X3)
     show_matrice_clean(Ct, "CT")    
-
-    return (X1, Ct)
+    return (X1, Ct, random_index)
     
     
-def decipher(ciph_data, public_key,spec_chara):
-    
+def decipher(ciph_data, public_key,spec_chara,beginning):
+    print("\nDeciphering`...")
     X1 = ciph_data[0]
+    
     ciph_data_mess = ciph_data[1].astype(int)
     public_key_inv = np.linalg.inv(public_key).astype(int)
     print("\n Try inverting X1\n ")
     X1_inv = np.linalg.inv(X1)
     X3 = np.dot(public_key_inv, ciph_data_mess)
+    show_matrice_clean(X3, "X3 RECEIVED")
     X2_V1 = np.dot(X1_inv,X3)
     X2_rounded = np.round(X2_V1,0)
     X2 = X2_rounded.astype(int)
-    print("\nDeciphering`...")
+    show_matrice_clean(X2, "X2 RECEIVED")
+        
     head = ord(spec_chara)
-    word = ""
+    preword = ""
+    ord_list_indexes=[]
+    # list in what order needs to be read thje matrix to get the base word
     for i in range(len(X2)):
-        if i==len(X2)-1:
-                break
-        elif i==(len(X2)-1) :
-            head+=int(X2[i][i-1])
-            word+=chr(head)
-        else :
-            head+=int(X2[1+i][i])
-            word+=chr(head)
-
+        for j in range(len(X2[i])):
+            if X2[j][j] == i: 
+                ord_list_indexes.append(j)
+    
+    # the correct order to read the message
+    for i in range(len(X2)-1):
+        col = (i+beginning)%len(X2)
+        val = (col+1)%len(X2)
+        head += X2[col][val]
+        print(f"head [{col}][{val}] adding {X2[col][val]} , ",chr(head))
+        preword+=(chr(head))
+    
+    print("preword : ", preword, " beginning : ", beginning)
+    # reconstruc the word that might have been rotated
+    word = ""
+    # recontruct the word taking while taking in account the begining
+    word += preword[-beginning:]
+    print("first step : ", word)
+    word += preword[:-beginning]
+    print("2nd step : ", word)
     return(word)
 
 
@@ -161,9 +202,9 @@ def decipher(ciph_data, public_key,spec_chara):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # TODO user input ? 
-data  = "Loot"
+data  = "jessy"
 #probeleme du double element possible de work around avec des espaces
-spec_chara = "a"
+spec_chara = "!"
 
 # public key
 n = len(data)+1
@@ -174,9 +215,9 @@ for i in range(n):
         
 print("---")
 
-ciphered_data = cipher(data, public_key,spec_chara,)
+ciphered_data = cipher(data, public_key,spec_chara)
 print("\n sending : ",ciphered_data)
-deciphered_data = decipher(ciphered_data, public_key,spec_chara)
+deciphered_data = decipher(ciphered_data, public_key,spec_chara,ciphered_data[2])
 
 print("\nMot original : ",data)
 print("/versus, décodé : ",deciphered_data)

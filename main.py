@@ -103,16 +103,31 @@ def translate_neighbors(matrix, index, preword,visited, head, flag):
         return 0
     # if there is new neighbors
     for i in range(len(temp)):
-        #this flags tell if we are going in the right direction
-        print("temp : ", temp[i]," Head : ", head)
+        # print("DEBUG line : ", matrix[index], "id: ", i, "temp : ", temp[i])
+        #this flags tell if we are going in the right direction : if the index in the word of next char is bigger
+        # if our id in the diagonal is less than what we are going to calculate, we are going in the right direction
+        if matrix[index][index] < matrix[temp[i]][temp[i]]: #special case if len(word)->0
+            flag = 1
+            print("current index is : ", index, " next is : ", temp[i], " flag is : ", flag)
+            if matrix[temp[i]][temp[i]]==len(preword)-1 and matrix[index][index]==1:
+                print("Mauvais SENS FINALEMENT")
+                flag = -1
+        else:
+            flag = -1
+            if matrix[temp[i]][temp[i]]==1 and matrix[index][index]==len(preword)-1:
+                print("BON SENS FINALEMENT")
+                flag = 1
+            print("current index is : ", index, " next is : ", temp[i], " flag is : ", flag)
+            
+        print("temp : ", temp[i]," Head : ", head, " = ", chr(head))
         visited[index] = True
-        print("head = ", chr(head), "+= ", matrix[index][temp[i]])
-        head+=(matrix[index][temp[i]])
+        print("1head = ", chr(head), " += ", flag*matrix[index][temp[i]])
+        head+=flag*(matrix[index][temp[i]])
+        print("2head = ", chr(head))
         # print(f"DEBUG  {matrix[index]} => MA[{index}][{index}] = {matrix[index][index]}")
         print("preword : ", preword)
-        translate_neighbors(matrix, temp[i], preword, visited, head)
-        head-=(matrix[index][temp[i]])
-        # print("visited : ", visited)
+        translate_neighbors(matrix, temp[i], preword, visited, head, flag)
+        head-=flag*(matrix[index][temp[i]])
     
 
 def cipher(data, public_key,spec_chara ):
@@ -165,11 +180,7 @@ def cipher(data, public_key,spec_chara ):
         X1.append(temp)
         mask_matrix.append(temp_mask)
     show_matrice_clean(X1, "X1")    
-    #TODO look if matrix not singluar, eklse add a space
-
-    # X2test = fake_minimum_spanning_tree(X1, random_index)
-    # show_matrice_clean(X2test, "X2test")
-    
+    #TODO look if matrix not singluar, eklse add a space    
     X2 = minimum_spanning_tree(X1, mask_matrix)
     show_matrice_clean(X2, "X2")
 
@@ -186,10 +197,10 @@ def cipher(data, public_key,spec_chara ):
     show_matrice_clean(X3, "X3")    
     Ct= np.dot(public_key, X3)
     show_matrice_clean(Ct, "CT")    
-    return (X1, Ct, random_index)
+    return (X1, Ct)
     
     
-def decipher(ciph_data, public_key,spec_chara,beginning):
+def decipher(ciph_data, public_key,spec_chara):
     print("\nDeciphering`...")
     X1 = ciph_data[0]
     
@@ -205,21 +216,10 @@ def decipher(ciph_data, public_key,spec_chara,beginning):
     X2 = X2_rounded.astype(int)
     show_matrice_clean(X2, "X2 RECEIVED")
     
-    X2_oriented = np.zeros((len(X2), len(X2))).astype(int)
-    # puts a minus sign in front of every character under the diagonal of X2
-    # for i in range(len(X2)):
-    #     for j in range(len(X2)):
-    #         if i > j:
-    #             X2_oriented[i][j] = -1*X2[i][j]
-    #         else:
-    #             X2_oriented[i][j] = X2[i][j]
-    # this flag helps to know if we are going in the right direction thrgough the word
     flag = 1
-    
     head = ord(spec_chara)
-    preword = ""
+    # preword = ""
     preword_filled = ["0" for _ in range(len(X2))]
-    # print("Preword Constructed : ", preword_filled)
     ord_list_indexes=[]
     # list in what order needs to be read thje matrix to get the base word
     for i in range(len(X2)):
@@ -229,32 +229,16 @@ def decipher(ciph_data, public_key,spec_chara,beginning):
     
     # visited nodes
     visited = [False] * len(X2)
-    translate_neighbors(X2_oriented, ord_list_indexes[0], preword_filled, visited, head)
-    # headmatrix = beginning-1
-    # print("headmatrix : ", headmatrix, " -> ", X2[headmatrix][headmatrix])
-    # # visited[headmatrix] = True
-    # #while every col/line hasn't been visited
-    # while visited.count(True) != len(X2):
-    #     # for each neighbor in the line, translate the weight in a char, and add it to the preword at the position of the neighbor diagonal index
-    #     print("visiting the line/col n° : ", headmatrix)
-    #     if headmatrix not in visited:
-    #         visited[headmatrix] = True
-            
-    #     headmatrix=(headmatrix+1)%len(X2)
-                
+    #TODO implement the following numbers of 0
+    translate_neighbors(X2, ord_list_indexes[0], preword_filled, visited, head, flag)
     
-    print("Debug : the constructed word", preword_filled)
-        
+    print("Debug : the constructed word", preword_filled)    
+    #reconstruct the word from the list
+    word=""
+    for i in range(1,len(preword_filled)):
+        word+=preword_filled[i]
     
-    print("preword : ", preword, " beginning : ", beginning)
-    # # reconstruc the word that might have been rotated
-    # word = ""
-    # # recontruct the word taking while taking in account the begining
-    # word += preword[-beginning:]
-    # print("first step : ", word)
-    # word += preword[:-beginning]
-    # print("2nd step : ", word)
-    return(preword_filled)
+    return(word)
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -262,7 +246,7 @@ def decipher(ciph_data, public_key,spec_chara,beginning):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # TODO user input ? 
-data  = "jesty"
+data  = "code secret"
 #probeleme du double element possible de work around avec des espaces
 spec_chara = "!"
 
@@ -277,7 +261,7 @@ print("---")
 
 ciphered_data = cipher(data, public_key,spec_chara)
 print("\n sending : ",ciphered_data)
-deciphered_data = decipher(ciphered_data, public_key,spec_chara,ciphered_data[2])
+deciphered_data = decipher(ciphered_data, public_key,spec_chara)
 
 print("\nMot original : ",data)
 print("/versus, décodé : ",deciphered_data)

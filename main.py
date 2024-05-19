@@ -41,7 +41,6 @@ def connect_nodes(nodes, lenght_alpha):
                     elt2.add_neighbor(elt, lenght_alpha)
 
 def minimum_spanning_tree(graph_matrix,mask_matrix):
-    
     num_nodes = len(graph_matrix)
     visited = [False] * num_nodes
     tree_matrix = [[0] * num_nodes for _ in range(num_nodes)]
@@ -80,6 +79,42 @@ def minimum_spanning_tree(graph_matrix,mask_matrix):
 
     return tree_matrix
     
+def translate_neighbors(matrix, index, preword,visited, head, flag):
+    #recursively check if the neighbor has been visited, if not, add the weight to the preword
+    print("\nIn index : ", index)
+    print("Adding the character : ", chr(head), "in the index : ", matrix[index][index], "of preword")
+    preword[matrix[index][index]]=chr(head)
+    #stopcondition : reaching a neigbor with neighbors already visited
+    new_neighbors = False
+    print("line : ", matrix[index])
+    print("visi : ", visited)
+    temp = []
+    for i in range(len(matrix[index])):
+        if matrix[index][i] != 0 and visited[i] == False:
+            # needs to ignore if thsi is a diagonal number
+            if i != index:
+                #if this line as some neigbors that have not been visited
+                new_neighbors = True
+                temp.append(i)
+                print("new neighbors to visit at index : ", i)
+    # if all neighbors were vsited 
+    if new_neighbors == False:
+        print("no new neighbors to visit")
+        return 0
+    # if there is new neighbors
+    for i in range(len(temp)):
+        #this flags tell if we are going in the right direction
+        print("temp : ", temp[i]," Head : ", head)
+        visited[index] = True
+        print("head = ", chr(head), "+= ", matrix[index][temp[i]])
+        head+=(matrix[index][temp[i]])
+        # print(f"DEBUG  {matrix[index]} => MA[{index}][{index}] = {matrix[index][index]}")
+        print("preword : ", preword)
+        translate_neighbors(matrix, temp[i], preword, visited, head)
+        head-=(matrix[index][temp[i]])
+        # print("visited : ", visited)
+    
+
 def cipher(data, public_key,spec_chara ):
     print("ciphering data : ", data)
     len_ascii = 128
@@ -97,8 +132,8 @@ def cipher(data, public_key,spec_chara ):
     node_spec = Node(len(data)+1, spec_chara)
     
     #add the spec node to the graph at random position
-    # random_index = 1
-    random_index = np.random.randint(0, len(nodes))    
+    random_index = 3
+    # random_index = np.random.randint(0, len(nodes))    
     new_nodes = [elt for elt in nodes]
     new_nodes.insert(0, node_spec)
     nodes.insert(random_index, node_spec)
@@ -160,6 +195,7 @@ def decipher(ciph_data, public_key,spec_chara,beginning):
     
     ciph_data_mess = ciph_data[1].astype(int)
     public_key_inv = np.linalg.inv(public_key).astype(int)
+    show_matrice_clean(X1, "X1 RECEIVED")
     print("\n Try inverting X1\n ")
     X1_inv = np.linalg.inv(X1)
     X3 = np.dot(public_key_inv, ciph_data_mess)
@@ -168,9 +204,22 @@ def decipher(ciph_data, public_key,spec_chara,beginning):
     X2_rounded = np.round(X2_V1,0)
     X2 = X2_rounded.astype(int)
     show_matrice_clean(X2, "X2 RECEIVED")
-        
+    
+    X2_oriented = np.zeros((len(X2), len(X2))).astype(int)
+    # puts a minus sign in front of every character under the diagonal of X2
+    # for i in range(len(X2)):
+    #     for j in range(len(X2)):
+    #         if i > j:
+    #             X2_oriented[i][j] = -1*X2[i][j]
+    #         else:
+    #             X2_oriented[i][j] = X2[i][j]
+    # this flag helps to know if we are going in the right direction thrgough the word
+    flag = 1
+    
     head = ord(spec_chara)
     preword = ""
+    preword_filled = ["0" for _ in range(len(X2))]
+    # print("Preword Constructed : ", preword_filled)
     ord_list_indexes=[]
     # list in what order needs to be read thje matrix to get the base word
     for i in range(len(X2)):
@@ -178,23 +227,34 @@ def decipher(ciph_data, public_key,spec_chara,beginning):
             if X2[j][j] == i: 
                 ord_list_indexes.append(j)
     
-    # the correct order to read the message
-    for i in range(len(X2)-1):
-        col = (i+beginning)%len(X2)
-        val = (col+1)%len(X2)
-        head += X2[col][val]
-        print(f"head [{col}][{val}] adding {X2[col][val]} , ",chr(head))
-        preword+=(chr(head))
+    # visited nodes
+    visited = [False] * len(X2)
+    translate_neighbors(X2_oriented, ord_list_indexes[0], preword_filled, visited, head)
+    # headmatrix = beginning-1
+    # print("headmatrix : ", headmatrix, " -> ", X2[headmatrix][headmatrix])
+    # # visited[headmatrix] = True
+    # #while every col/line hasn't been visited
+    # while visited.count(True) != len(X2):
+    #     # for each neighbor in the line, translate the weight in a char, and add it to the preword at the position of the neighbor diagonal index
+    #     print("visiting the line/col n° : ", headmatrix)
+    #     if headmatrix not in visited:
+    #         visited[headmatrix] = True
+            
+    #     headmatrix=(headmatrix+1)%len(X2)
+                
+    
+    print("Debug : the constructed word", preword_filled)
+        
     
     print("preword : ", preword, " beginning : ", beginning)
-    # reconstruc the word that might have been rotated
-    word = ""
-    # recontruct the word taking while taking in account the begining
-    word += preword[-beginning:]
-    print("first step : ", word)
-    word += preword[:-beginning]
-    print("2nd step : ", word)
-    return(word)
+    # # reconstruc the word that might have been rotated
+    # word = ""
+    # # recontruct the word taking while taking in account the begining
+    # word += preword[-beginning:]
+    # print("first step : ", word)
+    # word += preword[:-beginning]
+    # print("2nd step : ", word)
+    return(preword_filled)
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -202,7 +262,7 @@ def decipher(ciph_data, public_key,spec_chara,beginning):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # TODO user input ? 
-data  = "jessy"
+data  = "jesty"
 #probeleme du double element possible de work around avec des espaces
 spec_chara = "!"
 

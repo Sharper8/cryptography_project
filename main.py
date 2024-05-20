@@ -63,13 +63,8 @@ def create_matrix(matrix, data, lenght_alpha, spec_chara):
             nodes.append(new_node)
         for i in range(len(nodes)):
             # add previous neighbor
-            # print("enter")
             prev_index = (i - 1) % size
-            # print("try on data prev", data[prev_index])
             next_index = (i + 1) % size
-            # print("data |" , data, "| index ; " , i)
-            # for char in data:
-                # print(f"char n°{i} : ", char)
             w1 = get_weight(data[prev_index], data[i])
             w2 = get_weight(data[i], data[next_index])
             nodes[i].add_neighbor(nodes[prev_index], w1)
@@ -78,15 +73,14 @@ def create_matrix(matrix, data, lenght_alpha, spec_chara):
         node_spec = Node(len(data)+1, spec_chara)
         
         #add the spec node to the graph at random position
-        random_index = 3
-        # random_index = np.random.randint(0, len(nodes))    
+        # random_index = 3
+        random_index = np.random.randint(0, len(nodes))    
         new_nodes = [elt for elt in nodes]
         new_nodes.insert(0, node_spec)
         nodes.insert(random_index, node_spec)
         next_node_index = (random_index+1)%len(nodes)
         node_spec.add_neighbor(nodes[next_node_index], get_weight(spec_chara,nodes[next_node_index].char))
         nodes[next_node_index].add_neighbor(node_spec, get_weight(spec_chara,nodes[next_node_index].char))
-        print("added node spec : ", node_spec.char, " at index : ", random_index, "and with a weight of", get_weight(spec_chara,nodes[next_node_index].char))
         
         matrix = []
         #takes a singluar matrix and return a non singular matrix by adding 
@@ -105,7 +99,6 @@ def create_matrix(matrix, data, lenght_alpha, spec_chara):
             matrix.append(temp)
             mask_matrix.append(temp_mask)
         
-            # print("Matrix is singular, adding a random value to the matrix")
     # public key
     n = len(data)+1
     public_key = np.zeros((n, n)).astype(int)
@@ -113,8 +106,6 @@ def create_matrix(matrix, data, lenght_alpha, spec_chara):
     for i in range(n):
         for j in range(i , n): 
             public_key[i, j] = 1
-    # print the final word in console
-    print("Final word : ", [node.char for node in nodes])
     return matrix,mask_matrix, nodes, new_nodes, public_key
         
 
@@ -141,7 +132,6 @@ def minimum_spanning_tree(graph_matrix,mask_matrix):
             # Add edge to the tree
             tree_matrix[min_edge_start][min_edge_end] = min_edge_weight
             tree_matrix[min_edge_end][min_edge_start] = min_edge_weight
-            print("added edge : ", min_edge_start, " to ", min_edge_end, " with weight : ", min_edge_weight)
             visited[min_edge_end] = True
             edge_count += 1
 
@@ -159,23 +149,15 @@ def minimum_spanning_tree(graph_matrix,mask_matrix):
     
 def translate_neighbors(matrix, matrix_mask, index, preword,visited, head, flag, init):
     #recursively check if the neighbor has been visited, if not, add the weight to the preword
-    print("\nIn index : ", index)
-    print("Adding the character : ", chr(head), "in the index : ", matrix[index][index], "of preword")
     preword[matrix[index][index]]=chr(head)
     #stopcondition : reaching a neigbor with neighbors already visited
     new_neighbors = False
-    print("line : ", matrix[index])
-    print("visi : ", visited)
     temp = []
     for i in range(len(matrix[index])):
         
         #if this is an arc of value 0
         test = ((matrix[index][i] == 0) and(matrix_mask[index][i] <128)) and (not visited[i]) and matrix_mask[index][i] == 0
-        if not init:
-            #if the value was in fact a 0, we count it, else we don't
-            if test :
-                print(f"a route with weight 0 exists in coord {index} and {i} ; init = {init}")
-        else : 
+        if init:
             test = not test
         
         if ((matrix[index][i] != 0) or test)and not visited[i]:
@@ -184,37 +166,25 @@ def translate_neighbors(matrix, matrix_mask, index, preword,visited, head, flag,
                 #if this line as some neigbors that have not been visited
                 new_neighbors = True
                 temp.append(i)
-                print("new neighbors to visit at index : ", i)
 
     # if all neighbors were vsited 
     if new_neighbors == False:
-        print("no new neighbors to visit")
         return 0
     # if there is new neighbors
     for i in range(len(temp)):
-        # print("DEBUG line : ", matrix[index], "id: ", i, "temp : ", temp[i])
         # this flags tell if we are going in the right direction : if the index in the word of next char is bigger
         # if our id in the diagonal is less than what we are going to calculate, we are going in the right direction
         if matrix[index][index] < matrix[temp[i]][temp[i]]: #special case if len(word)->0
             flag = 1
-            print("current index is : ", index, " next is : ", temp[i], " flag is : ", flag)
             if matrix[temp[i]][temp[i]]==len(preword)-1 and matrix[index][index]==1:
-                print("Mauvais SENS FINALEMENT")
                 flag = -1
         else:
             flag = -1
             if matrix[temp[i]][temp[i]]==1 and matrix[index][index]==len(preword)-1:
-                print("BON SENS FINALEMENT")
                 flag = 1
-            print("current index is : ", index, " next is : ", temp[i], " flag is : ", flag)
-            # 
-        print("temp : ", temp[i]," Head : ", head, " = ", chr(head))
+
         visited[index] = True
-        print("1head = ", chr(head), " += ", flag*matrix[index][temp[i]])
         head+=flag*(matrix[index][temp[i]])
-        print("2head = ", chr(head))
-        # print(f"DEBUG  {matrix[index]} => MA[{index}][{index}] = {matrix[index][index]}")
-        # print("preword : ", preword)
         translate_neighbors(matrix, matrix_mask, temp[i], preword, visited, head, flag, False)
         head-=flag*(matrix[index][temp[i]])
     
@@ -292,6 +262,9 @@ def decipher(ciph_data,spec_chara):
     word=""
     for i in range(1,len(preword_filled)):
         word+=preword_filled[i]
+        
+    # cut the excessives spaces at the beginning of the word
+    word = word.lstrip(" ")
     
     return(word)
 
@@ -301,7 +274,7 @@ def decipher(ciph_data,spec_chara):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # TODO user input ? 
-data  = "J'ai réussi :!: : : : : :"
+data  = "Hello world !"
 #probeleme du double element possible de work around avec des espaces
 spec_chara = "!"
 
@@ -311,5 +284,5 @@ ciphered_data = cipher(data,spec_chara)
 print("\n sending : ",ciphered_data)
 deciphered_data = decipher(ciphered_data,spec_chara)
 
-print("\nMot original : ",data)
-print("/versus, décodé : ",deciphered_data)
+print("\nMot original : {",data,"}")
+print("/versus, décodé : {",deciphered_data, "}")

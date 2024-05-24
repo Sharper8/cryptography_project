@@ -48,7 +48,9 @@ def connect_nodes(nodes, lenght_alpha):
 
     
 def create_matrix(matrix, data, lenght_alpha, spec_chara, pk_size):
-    init = 0
+    # raise an error if the message is longer than pk_size
+    if len(data) > pk_size:
+        raise ValueError("The message is too long for the public key")
     # add spaces as many spaces at the beginning of the data so that it's the same size as the public key
     data = " " * (pk_size - len(data)-1) + data
         

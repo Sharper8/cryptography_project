@@ -47,66 +47,56 @@ def connect_nodes(nodes, lenght_alpha):
                     elt2.add_neighbor(elt, lenght_alpha)
 
     
-def create_matrix(matrix, data, lenght_alpha, spec_chara):
+def create_matrix(matrix, data, lenght_alpha, spec_chara, pk_size):
     init = 0
-    while init == 0 or test_singular(matrix) == True:
-        if init != 0:
-            data = " " + data
-            # print('iteration N°', init + 1)
-        init += 1
+    # add spaces as many spaces at the beginning of the data so that it's the same size as the public key
+    data = " " * (pk_size - len(data)-1) + data
         
-        nodes = []
-        size = len(data)
-        for i in range(size):
-            new_node = Node(i, data[i])
-            # append neighbors 
-            nodes.append(new_node)
-        for i in range(len(nodes)):
-            # add previous neighbor
-            prev_index = (i - 1) % size
-            next_index = (i + 1) % size
-            w1 = get_weight(data[prev_index], data[i])
-            w2 = get_weight(data[i], data[next_index])
-            nodes[i].add_neighbor(nodes[prev_index], w1)
-            nodes[i].add_neighbor(nodes[next_index], w2)
-        connect_nodes(nodes, lenght_alpha)
-        node_spec = Node(len(data)+1, spec_chara)
-        
-        #add the spec node to the graph at random position
-        # random_index = 3
-        random_index = np.random.randint(0, len(nodes))    
-        new_nodes = [elt for elt in nodes]
-        new_nodes.insert(0, node_spec)
-        nodes.insert(random_index, node_spec)
-        next_node_index = (random_index+1)%len(nodes)
-        node_spec.add_neighbor(nodes[next_node_index], get_weight(spec_chara,nodes[next_node_index].char))
-        nodes[next_node_index].add_neighbor(node_spec, get_weight(spec_chara,nodes[next_node_index].char))
-        
-        matrix = []
-        #takes a singluar matrix and return a non singular matrix by adding 
-        mask_matrix = []
-        # copy the dict keys into a list
-        for i in range (len(nodes)):
-            temp = []
-            temp_mask = []
-            for j in range (len(nodes)):
-                if nodes[i] in nodes[j].neighbors.keys():
-                    temp_mask.append(1)
-                    temp.append(nodes[i].neighbors[nodes[j]])
-                else:
-                    temp_mask.append(0)
-                    temp.append(0)
-            matrix.append(temp)
-            mask_matrix.append(temp_mask)
-        
-    # public key
-    n = len(data)+1
-    public_key = np.zeros((n, n)).astype(int)
-    # TODO randomize the shared key ?  
-    for i in range(n):
-        for j in range(i , n): 
-            public_key[i, j] = 1
-    return matrix,mask_matrix, nodes, new_nodes, public_key
+    nodes = []
+    size = len(data)
+    for i in range(size):
+        new_node = Node(i, data[i])
+        # append neighbors 
+        nodes.append(new_node)
+    for i in range(len(nodes)):
+        # add previous neighbor
+        prev_index = (i - 1) % size
+        next_index = (i + 1) % size
+        w1 = get_weight(data[prev_index], data[i])
+        w2 = get_weight(data[i], data[next_index])
+        nodes[i].add_neighbor(nodes[prev_index], w1)
+        nodes[i].add_neighbor(nodes[next_index], w2)
+    connect_nodes(nodes, lenght_alpha)
+    node_spec = Node(len(data)+1, spec_chara)
+    
+    #add the spec node to the graph at random position
+    # random_index = 3
+    random_index = np.random.randint(0, len(nodes))    
+    new_nodes = [elt for elt in nodes]
+    new_nodes.insert(0, node_spec)
+    nodes.insert(random_index, node_spec)
+    next_node_index = (random_index+1)%len(nodes)
+    node_spec.add_neighbor(nodes[next_node_index], get_weight(spec_chara,nodes[next_node_index].char))
+    nodes[next_node_index].add_neighbor(node_spec, get_weight(spec_chara,nodes[next_node_index].char))
+    
+    matrix = []
+    #takes a singluar matrix and return a non singular matrix by adding 
+    mask_matrix = []
+    # copy the dict keys into a list
+    for i in range (len(nodes)):
+        temp = []
+        temp_mask = []
+        for j in range (len(nodes)):
+            if nodes[i] in nodes[j].neighbors.keys():
+                temp_mask.append(1)
+                temp.append(nodes[i].neighbors[nodes[j]])
+            else:
+                temp_mask.append(0)
+                temp.append(0)
+        matrix.append(temp)
+        mask_matrix.append(temp_mask)
+    
+    return matrix,mask_matrix, nodes, new_nodes
         
 
 def minimum_spanning_tree(graph_matrix,mask_matrix):
@@ -189,19 +179,18 @@ def translate_neighbors(matrix, matrix_mask, index, preword,visited, head, flag,
         head-=flag*(matrix[index][temp[i]])
     
 
-def cipher(data,spec_chara):
+def cipher(data,spec_chara, shared_key):
     print("ciphering data : ", data)
     len_ascii = 128
     X1 = []
     print('-----Nodes-----')
 
-    tupleres = create_matrix(X1, data, len_ascii, spec_chara)
+    tupleres = create_matrix(X1, data, len_ascii, spec_chara,len(shared_key))
     X1 = tupleres[0]
     # mask will help determine the min span tree algo to see if 0 is an empty value or a weight
     mask_matrix = tupleres[1]
     nodes = tupleres[2]
     new_nodes = tupleres[3]
-    public_key = tupleres[4]
         
     show_matrice_clean(X1, "X1")    
     
@@ -219,18 +208,17 @@ def cipher(data,spec_chara):
     
     X3 = np.dot(X1,matrix2)
     show_matrice_clean(X3, "X3")    
-    Ct= np.dot(public_key, X3)
+    Ct= np.dot(shared_key, X3)
     show_matrice_clean(Ct, "CT")    
-    return (X1, Ct,public_key)
+    return (X1, Ct)
     
     
-def decipher(ciph_data,spec_chara):
+def decipher(ciph_data,spec_chara, shared_key):
     print("\nDeciphering`...")
     X1 = ciph_data[0]
     
     ciph_data_mess = ciph_data[1].astype(int)
-    public_key = ciph_data[2]
-    public_key_inv = np.linalg.inv(public_key).astype(int)
+    public_key_inv = np.linalg.inv(shared_key).astype(int)
     show_matrice_clean(X1, "X1 RECEIVED")
     # print("\n Try inverting X1\n ")
     X1_inv = np.linalg.inv(X1)
@@ -274,15 +262,22 @@ def decipher(ciph_data,spec_chara):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 # TODO user input ? 
-data  = "Hello world !"
-#probeleme du double element possible de work around avec des espaces
+data  = "LOOOT !"
 spec_chara = "!"
+max_size = 65
+
+# public key
+shared_key = np.zeros((max_size, max_size)).astype(int)
+
+for i in range(max_size):
+    for j in range(i , max_size): 
+        shared_key[i, j] = 1
 
 print("---")
 
-ciphered_data = cipher(data,spec_chara)
+ciphered_data = cipher(data,spec_chara, shared_key)
 print("\n sending : ",ciphered_data)
-deciphered_data = decipher(ciphered_data,spec_chara)
+deciphered_data = decipher(ciphered_data,spec_chara, shared_key)
 
 print("\nMot original : {",data,"}")
 print("/versus, décodé : {",deciphered_data, "}")

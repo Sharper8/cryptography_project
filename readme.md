@@ -7,18 +7,13 @@ This algorithm is a symmetric key algorithm. It is based on the idea of finding
 a minimum weight covering tree (using Prim)
 
 
-Questions : 
+# Questions : 
 
-• Implémenter l’algorithme en Python de manière à pouvoir chiffrer et déchiffrer 
-n’importe quelle phrase, une fois que nous nous sommes mis d’accord à l’avance 
-sur la matrice clé privée.
-=> la clé privée varie en fonction de la taille du message, le message est correctement chiffré et déchiffré
+Implement the algorithm in Python in a way that can be encrypted and decrypted any sentence, once we are put d’accord to l’ advance on the private key matrix.
+=> the private key varies depending on the size of the message, the message is correctly encrypted and decrypted
 
-• Expliquer pourquoi on utilise un arbre couvrant de poids minimal ici.
-=> L'arbre couvrant de poids minimal sert à retrouver le sens des charactères du message traduits en nombres. 
+Explain why a minimum weight covering tree is used here.
+=> The covering tree of minimum weight is used to find the meaning of the characters of the message works in numbers. 
 
-• Expliquer pourquoi, en utilisant la matrice X1 qui est envoyée publiquement, un 
-attaquant ne peut pas déchiffrer le message facilement. C’est-à-dire, bien que 
-X2 ​et X1 soient très proches, pourquoi avons-nous besoin de X2 pour déchiffrer 
-et pourquoi X1 ne suffit pas.
-=> Dans X1, il manque l'information de l'ordre des colonnes. On pourrait connaitre le sens du graphe ou sa forme en calculant le MST de X1, mais on a besoin de l'ordre pour savoir ou commence la tête et quel caractère est placé ou dans le mot final (diagonale de X2)
+- Explain why, using the X1 matrix that is sent, an attacker cannot make the message easy. That is, although X2 and X1 are close, why do we need X2 and why X1 is not enough.
+=> In X1, it lacks information of order of columns. One could know the direction of the graph or its shape by calculating the STM of X1, but one needs the order to know or start the head and which loom is placed or in the final word (diagonal of X2)
